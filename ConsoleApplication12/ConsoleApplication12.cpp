@@ -106,18 +106,37 @@ Mat Arnold(Mat& img, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL, int times = 1,
 	return dest;
 }
 
+void test1()
+{
+	Mat src = imread("lena512.png");
+	printf("%d %d\n", src.type(), CV_8UC3);
+	Mat dest = Arnold(src, YC_ARNOLD_NORMAL, 20);
+
+	//imshow("src", src);
+	//imshow("dest", Arnold(dest, YC_ARNOLD_REVERSE));
+
+	imwrite("out.png", dest);
+}
+
+void test2()
+{
+
+	Mat src = imread("out.png");
+	resize(src, src, { 512, 512 });
+	src = Arnold(src, YC_ARNOLD_REVERSE, 20);
+	imshow("src", src);
+
+	waitKey(0);
+
+}
 int main()
 {
 	init();
 
-	Mat src = imread("lena1.png");
-	printf("%d %d\n", src.type(), CV_8UC3);
-	Mat dest = Arnold(src);
+	test1();
+	test2();
 
-	imshow("src", src);
-	imshow("dest", Arnold(dest, YC_ARNOLD_REVERSE));
 
-	waitKey(0);
 
 	return 0;
 }
