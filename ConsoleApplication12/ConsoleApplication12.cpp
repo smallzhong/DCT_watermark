@@ -1,8 +1,4 @@
-﻿#include <iostream>
-#include "head.hpp"
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/utils/logger.hpp>
-
+﻿#include "head.hpp"
 
 using namespace cv;
 
@@ -127,16 +123,42 @@ void test2()
 	imshow("src", src);
 
 	waitKey(0);
-
 }
+
+void test3()
+{
+	get_bin_image("lena512.png");
+}
+
+Mat get_bin_image(string path)
+{
+	Mat src = imread(path, 0);
+	int row = src.rows, col = src.cols;
+
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			uchar t = src.at<uchar>(i, j);
+			if (t > 255 / 2) src.at<uchar>(i, j) = UCHAR_MAX;
+			else src.at<uchar>(i, j) = 0;
+		}
+		puts("");
+	}
+
+	imshow("src", src);
+	waitKey(0);
+
+	return src;
+}
+
 int main()
 {
 	init();
 
-	test1();
-	test2();
-
-
+	//test1();
+	//test2();
+	test3();
 
 	return 0;
 }

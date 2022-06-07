@@ -4,9 +4,14 @@
 #include <bitset>
 #include <string>
 #include <time.h>
+#include <limits.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/utils/logger.hpp>
+
 
 using namespace std;
 
+cv::Mat get_bin_image(string path);
 //extern "C" int getopt(int argc, char* const* argv, const char* optstring);
 
 typedef union _LARGE_INTEGER {
