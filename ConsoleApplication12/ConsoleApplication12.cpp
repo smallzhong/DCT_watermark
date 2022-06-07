@@ -30,7 +30,7 @@ enum ARNOLD_TYPE
 /// <param name="c">自定义时矩阵参数</param>
 /// <param name="d">自定义时矩阵参数</param>
 /// <returns>完成arnold置换后的图片</returns>
-Mat Arnold(Mat& img, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
+Mat Arnold(Mat& img, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL, int times = 1,
 	int a = 1, int b = 1, int c = 1, int d = 2)
 {
 	int img_type = img.type();
@@ -112,11 +112,10 @@ int main()
 
 	Mat src = imread("lena1.png");
 	printf("%d %d\n", src.type(), CV_8UC3);
-	Mat dest = Arnold(src, 20, YC_ARNOLD_NORMAL);
+	Mat dest = Arnold(src);
 
 	imshow("src", src);
-	imshow("dest", Arnold(dest, 20, YC_ARNOLD_REVERSE));
-	//imshow("1", Arnold(dest, 1, YC_ARNOLD_REVERSE));
+	imshow("dest", Arnold(dest, YC_ARNOLD_REVERSE));
 
 	waitKey(0);
 
