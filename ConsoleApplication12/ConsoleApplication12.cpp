@@ -39,6 +39,8 @@ Mat Arnold(Mat& src, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
 		EXIT_ERROR("传入的图片类型错误！");
 	}
 
+	if (times == 0) return src; // times=0直接返回
+
 	switch (arnold_type)
 	{
 	case YC_ARNOLD_NORMAL:
@@ -62,36 +64,42 @@ Mat Arnold(Mat& src, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
 		break;
 	}
 
+
 	int row = src.rows, col = src.cols;
 	int N = row;
 	Mat dest(row, col, img_type);
 	if (row != col) EXIT_ERROR("row != col!");
 
-	for (int i = 0; i < row; i++)
+	while (times--)
 	{
-		for (int j = 0; j < col; j++)
+		for (int i = 0; i < row; i++)
 		{
-			int x1 = (a * i + b * j + N) % N;
-			int y1 = (c * i + d * j + N) % N;
+			for (int j = 0; j < col; j++)
+			{
+				int x1 = (a * i + b * j + N) % N;
+				int y1 = (c * i + d * j + N) % N;
 
-			switch (img_type)
-			{
-			case CV_8UC1:
-			{
-				dest.at<uchar>(x1, y1) = src.at<uchar>(i, j);
+				switch (img_type)
+				{
+				case CV_8UC1:
+				{
+					dest.at<uchar>(x1, y1) = src.at<uchar>(i, j);
+				}
+				break;
+				case CV_8UC3:
+				{
+					dest.at<Vec3b>(x1, y1) = src.at<Vec3b>(i, j);
+				}
+				break;
+				default:
+				{
+					EXIT_ERROR("不应发生");
+				}
+				break;
+				}
 			}
-			break;
-			case CV_8UC3:
-			{
-				dest.at<Vec3b>(x1, y1) = src.at<Vec3b>(i, j);
-			}
-			break;
-			default:
-			{
-				EXIT_ERROR("不应发生");
-			}
-			break;
-			}
+
+			dest.copyTo(src);
 		}
 	}
 
@@ -103,7 +111,7 @@ int main()
 	init();
 	Mat src = imread("lena1.png");
 	printf("%d %d\n", src.type(), CV_8UC3);
-	Mat dest = Arnold(src);
+	Mat dest = Arnold(src, 6000);
 
 	imshow("src", src);
 	imshow("dest", dest);
