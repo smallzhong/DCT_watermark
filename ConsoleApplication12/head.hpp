@@ -24,7 +24,7 @@ typedef union _LARGE_INTEGER {
 #define EXIT_ERROR(x)                                 \
 	do                                                \
 	{                                                 \
-		cout << "error in file " << __FILE__ << " in line " << __LINE__ << endl; \
+		cout << "error in file " << __FILE__ << " in function " << __FUNCTION__ << " in line " << __LINE__ << endl; \
 		cout << x;                                    \
 		getchar();                                    \
 		exit(EXIT_FAILURE);                           \
