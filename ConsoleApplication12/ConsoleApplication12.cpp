@@ -29,16 +29,17 @@ enum ARNOLD_TYPE
 /// <param name="b">自定义时矩阵参数</param>
 /// <param name="c">自定义时矩阵参数</param>
 /// <param name="d">自定义时矩阵参数</param>
-/// <returns></returns>
-Mat Arnold(Mat& src, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
+/// <returns>完成arnold置换后的图片</returns>
+Mat Arnold(Mat& img, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
 	int a = 1, int b = 1, int c = 1, int d = 2)
 {
-	int img_type = src.type();
+	int img_type = img.type();
 	if (img_type != CV_8UC1 && img_type != CV_8UC3)
 	{
 		EXIT_ERROR("传入的图片类型错误！");
 	}
 
+	Mat src = img.clone();
 	if (times == 0) return src; // times=0直接返回
 
 	switch (arnold_type)
@@ -98,9 +99,8 @@ Mat Arnold(Mat& src, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
 				break;
 				}
 			}
-
-			dest.copyTo(src);
 		}
+		dest.copyTo(src);
 	}
 
 	return dest;
@@ -109,12 +109,14 @@ Mat Arnold(Mat& src, int times = 1, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL,
 int main()
 {
 	init();
+
 	Mat src = imread("lena1.png");
 	printf("%d %d\n", src.type(), CV_8UC3);
-	Mat dest = Arnold(src, 6000);
+	Mat dest = Arnold(src, 20, YC_ARNOLD_NORMAL);
 
 	imshow("src", src);
-	imshow("dest", dest);
+	imshow("dest", Arnold(dest, 20, YC_ARNOLD_REVERSE));
+	//imshow("1", Arnold(dest, 1, YC_ARNOLD_REVERSE));
 
 	waitKey(0);
 
