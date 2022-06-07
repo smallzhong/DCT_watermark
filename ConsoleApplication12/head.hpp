@@ -5,9 +5,13 @@
 #include <string>
 #include <time.h>
 #include <limits.h>
+#include <vector>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/utils/logger.hpp>
 
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 

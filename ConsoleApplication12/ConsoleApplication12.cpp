@@ -102,6 +102,28 @@ Mat Arnold(Mat& img, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL, int times = 1,
 	return dest;
 }
 
+Mat get_bin_image(string path)
+{
+	Mat src = imread(path, 0);
+	int row = src.rows, col = src.cols;
+
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			uchar t = src.at<uchar>(i, j);
+			if (t > 255 / 2) src.at<uchar>(i, j) = UCHAR_MAX;
+			else src.at<uchar>(i, j) = 0;
+		}
+		puts("");
+	}
+
+	imshow("src", src);
+	waitKey(0);
+
+	return src;
+}
+
 void test1()
 {
 	Mat src = imread("lena512.png");
@@ -130,26 +152,84 @@ void test3()
 	get_bin_image("lena512.png");
 }
 
-Mat get_bin_image(string path)
+void test4()
 {
-	Mat src = imread(path, 0);
+	Mat src = imread("lena512.png");
 	int row = src.rows, col = src.cols;
 
-	for (int i = 0; i < row; i++)
+	imshow("src", src);
+	printf("src.type() = %d\n", src.type());
+	printf("CV_32F = %d CV_32FC1 = %d CV_32FC3 = %d\n", CV_32F, CV_32FC1, CV_32FC3);
+	vector<Mat> channels;
+	split(src, channels);
+	printf("channels.size() = %d\n", channels.size());
+	for (auto &cur_img : channels)
 	{
-		for (int j = 0; j < col; j++)
+		static int ct = 0;
+		Mat dest;
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+		dct(cur_img, dest, 0);
+
+		// 全图dct变换，8*8
+		for (int i = 0; i < row; i += 8)
 		{
-			uchar t = src.at<uchar>(i, j);
-			if (t > 255 / 2) src.at<uchar>(i, j) = UCHAR_MAX;
-			else src.at<uchar>(i, j) = 0;
+			for (int j = 0; j < col; j += 8)
+			{
+				Mat t_mat(8, 8, cur_img.type());
+
+				for (int x = 0; x < 8; x++)
+				{
+					for (int y = 0; y < 8; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				dct(t_mat, t_mat);
+				for (int x = 0; x < 8; x++)
+				{
+					for (int y = 0; y < 8; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
 		}
-		puts("");
+
+		// 全图逆dct变换，8*8
+		for (int i = 0; i < row; i += 8)
+		{
+			for (int j = 0; j < col; j += 8)
+			{
+				Mat t_mat(8, 8, cur_img.type());
+
+				for (int x = 0; x < 8; x++)
+				{
+					for (int y = 0; y < 8; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				idct(t_mat, t_mat);
+				for (int x = 0; x < 8; x++)
+				{
+					for (int y = 0; y < 8; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
+
+
 	}
 
-	imshow("src", src);
-	waitKey(0);
+	Mat dest;
+	merge(channels, dest);
+	imshow("dest", dest);
 
-	return src;
+	waitKey(0);
 }
 
 int main()
@@ -158,7 +238,8 @@ int main()
 
 	//test1();
 	//test2();
-	test3();
+	//test3();
+	test4();
 
 	return 0;
 }
