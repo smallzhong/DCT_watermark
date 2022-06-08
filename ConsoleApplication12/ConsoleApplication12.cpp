@@ -12,8 +12,14 @@ const float embed_addup = .01;
 
 #define DEFAULT_TIMES 17
 
-
 #define show(a) imshow(to_string(ct ++ ), a)
+
+void set_param()
+{
+	int* p = (int*)(&a_x_embed);
+	*p = 3;
+
+}
 void init()
 {
 	cv::utils::logging::setLogLevel(utils::logging::LOG_LEVEL_SILENT);
@@ -609,11 +615,55 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 	return res;
 }
 
-void test10()
+void 嵌入水印(string img_path, string icon_path, uint seed = 'zyc')
 {
-	Mat src = imread("lena512.png");
-	//int max_capacity = src.cols 
-	bitset<bits_size> bits = get_icon_from_file_and_encrypt("icon.png", 'zyc', 90, 90);
+	Mat src = imread(img_path);
+	int max_capacity = (src.cols / 4) * (src.cols / 4) * 3; // 4*4作为最小单位，算出当前图像最多能存放多少bit
+
+	Mat icon = imread(icon_path);
+	// 如果水印长宽不等，进行调整
+	if (icon.rows != icon.cols)
+	{
+		resize(icon, icon, { max(icon.rows, icon.cols) , max(icon.rows, icon.cols) });
+	}
+	int icon_bits = icon.rows * icon.rows;
+	// 如果发现容量不足
+	if (icon_bits > max_capacity)
+	{
+		int col_max = (int)(floor(sqrt(max_capacity)));
+		// 缩小到最大容量
+		resize(icon, icon, { col_max, col_max });
+		icon_bits = col_max * col_max; // 更新icon_bit
+	}
+
+	// 自适应地确定嵌入水印时选择的方阵大小
+	int t_matrix_cols = 8;
+	// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
+	auto check = [=]() -> bool {
+		int t_capa = (src.rows / t_matrix_cols) * (src.cols / t_matrix_cols) * 3;
+		if (t_capa < icon_bits) return false;
+		else return true;
+	};
+
+	// 如果8已经大了，那么不断减小
+	if (!check())
+	{
+		do
+		{
+			t_matrix_cols--;
+		} while (!check());
+	}
+	// 找到最大的矩阵宽度
+	else
+	{
+		do
+		{
+			t_matrix_cols++;
+		} while (check());
+		t_matrix_cols--;
+	}
+
+	bitset<bits_size> bits = get_icon_from_file_and_encrypt(icon_path, seed, 90, 90);
 
 	Mat embeded = embed_watermark(src, bits);
 	imwrite("embeded.png", embeded);
