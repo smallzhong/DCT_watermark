@@ -8,7 +8,7 @@ int a_x_embed = 3;
 int a_y_embed = 3;
 int b_x_embed = 3;
 int b_y_embed = 2;
-float embed_addup = .003;
+float embed_addup = .01;
 int matrix_cols = 4;
 
 #define DEFAULT_TIMES 17
@@ -32,7 +32,7 @@ void set_global_params(int col)
 	p = (int*)(&matrix_cols);
 	*p = col;
 
-	printf("修改全局变量完成！%d %d %d %d %d\n", a_x_embed, a_y_embed, b_x_embed, b_y_embed, matrix_cols);
+	//printf("修改全局变量完成！%d %d %d %d %d\n", a_x_embed, a_y_embed, b_x_embed, b_y_embed, matrix_cols);
 }
 void init()
 {
@@ -648,7 +648,6 @@ Mat 嵌入水印(string img_path, string icon_path, uint seed, int param = -1)
 	// 如果没有自定义param
 	if (param == -1)
 	{
-
 		// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
 		auto check = [=](int col) -> bool {
 			int t_capa = (src.rows / col) * (src.cols / col) * 3;
@@ -679,6 +678,7 @@ Mat 嵌入水印(string img_path, string icon_path, uint seed, int param = -1)
 		t_matrix_cols = param;
 	}
 	set_global_params(t_matrix_cols);
+	printf("设置参数完成。当前嵌入参数为%d。提取水印时需要输入此参数，否则无法提取！", t_matrix_cols);
 
 	bitset<bits_size> bits = get_icon_from_file_and_encrypt(icon_path, seed, 90, 90);
 
@@ -713,7 +713,6 @@ Mat 嵌入水印(Mat src, string icon_path, uint seed, int param = -1)
 	// 如果没有自定义param
 	if (param == -1)
 	{
-
 		// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
 		auto check = [=](int col) -> bool {
 			int t_capa = (src.rows / col) * (src.cols / col) * 3;
@@ -744,6 +743,7 @@ Mat 嵌入水印(Mat src, string icon_path, uint seed, int param = -1)
 		t_matrix_cols = param;
 	}
 	set_global_params(t_matrix_cols);
+	printf("设置参数完成。当前嵌入参数为%d。提取水印时需要输入此参数，否则无法提取！\n", t_matrix_cols);
 
 	bitset<bits_size> bits = get_icon_from_file_and_encrypt(icon_path, seed, 90, 90);
 
