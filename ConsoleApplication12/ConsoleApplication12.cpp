@@ -278,7 +278,7 @@ Mat chaos_xor(Mat& src, uint seed)
 }
 
 Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
-	int times = 1, int a = 1, int b = 1, int c = 1, int d = 2)
+	int times = 17, int a = 1, int b = 1, int c = 1, int d = 2)
 {
 	Mat src = read_bin_icon_and_resize(path, row, col);
 	src = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
@@ -287,7 +287,7 @@ Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
 	return src;
 }
 
-Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times =1,
+Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times =17,
 	int a = 2, int b = -1, int c = -1, int d = 1)
 {
 	Mat dest = src.clone();
