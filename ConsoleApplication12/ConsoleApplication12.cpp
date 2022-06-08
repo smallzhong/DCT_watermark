@@ -154,6 +154,82 @@ void test3()
 
 int g_ct = 0;
 
+
+Mat read_bin_icon_and_resize(string path, int row, int col)
+{
+	Mat src = get_bin_image(path);
+	resize(src, src, { row, col });
+
+	return src;
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="src">原始图像</param>
+/// <param name="seed">混沌种子</param>
+/// <param name=""></param>
+/// <returns></returns>
+Mat chaos_xor(Mat& src, uint seed)
+{
+	int row = src.rows, col = src.cols;
+	srand(seed);
+	Mat dest(row, col, src.type());
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			// TODO:
+			dest.at<uchar>(i, j) = src.at<uchar>(i, j) ^ (rand() % 255);
+		}
+	}
+
+	return dest;
+}
+
+Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
+	int times = 17, int a = 1, int b = 1, int c = 1, int d = 2)
+{
+	Mat src = read_bin_icon_and_resize(path, row, col);
+	src = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
+	src = chaos_xor(src, seed);
+
+	return src;
+}
+
+Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times = 17,
+	int a = 2, int b = -1, int c = -1, int d = 1)
+{
+	Mat dest = src.clone();
+	if (~row || ~col)
+	{
+		resize(dest, dest, { row, col });
+	}
+	dest = chaos_xor(dest, seed);
+	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
+
+	return dest;
+}
+
+void test5()
+{
+	Mat src = get_icon_from_file_and_encrypt("lena512.png", 'zyc', 512, 512);
+	imshow("src", src);
+	imwrite("666.png", src);
+	Mat dest = decrypt_icon(src, 'zyc');
+	imshow("dest", dest);
+
+	waitKey(0);
+}
+
+void test6()
+{
+	Mat src = imread("666.png", 0);
+	src = decrypt_icon(src, 'zyc', 512, 512);
+	imshow("dest", src);
+	waitKey(0);
+}
+
 void test4()
 {
 	Mat src = imread("lena512.png");
@@ -172,7 +248,7 @@ void test4()
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 		dct(cur_img, dest, 0);
 
-#define s 2
+		int s = 2;
 		// 全图dct变换，8*8
 		for (int i = 0; i < row; i += s)
 		{
@@ -233,8 +309,6 @@ void test4()
 				}
 			}
 		}
-
-
 	}
 
 	Mat dest;
@@ -245,80 +319,96 @@ void test4()
 	waitKey(0);
 }
 
-Mat read_bin_icon_and_resize(string path, int row, int col)
+void test7(string path)
 {
-	Mat src = get_bin_image(path);
-	resize(src, src, { row, col });
-
-	return src;
-}
-
-/// <summary>
-/// 
-/// </summary>
-/// <param name="src">原始图像</param>
-/// <param name="seed">混沌种子</param>
-/// <param name=""></param>
-/// <returns></returns>
-Mat chaos_xor(Mat& src, uint seed)
-{
+	// TODO:以后可以考虑封装一个可变长bitset的类，每次1.5倍增加大小，重载[]符号
+	bitset<100000> res;
+	Mat src = imread(path);
+	imwrite("1.png", src);
 	int row = src.rows, col = src.cols;
-	srand(seed);
-	Mat dest(row, col, src.type());
-	for (int i = 0; i < row; i++)
+
+	vector<Mat> channels;
+	split(src, channels);
+	for (auto& cur_img : channels)
 	{
-		for (int j = 0; j < col; j++)
-		{
-			// TODO:
-			dest.at<uchar>(i, j) = src.at<uchar>(i, j) ^ (rand() % 255);
-		}
+		static int ct = 0;
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+		imshow(to_string(ct++), cur_img);
+
+		int s = 8;
+		// 全图DCT变换，置换高频
+		//for (int i = 0; i < row; i += s)
+		//{
+		//	for (int j = 0; j < col; j += s)
+		//	{
+		//		Mat t_mat(s, s, cur_img.type());
+
+		//		for (int x = 0; x < s; x++)
+		//		{
+		//			for (int y = 0; y < s; y++)
+		//			{
+		//				t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+		//			}
+		//		}
+
+		//		dct(t_mat, t_mat);
+
+		//		float a = t_mat.at<float>(s - 1, 0);
+		//		float b = t_mat.at<float>(0, s - 1);
+		//		if (a < b)
+		//		{
+		//			swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
+		//			g_ct++;
+		//		}
+		//		for (int x = 0; x < s; x++)
+		//		{
+		//			for (int y = 0; y < s; y++)
+		//			{
+		//				cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+
+		//			}
+		//		}
+		//	}
+		//}
+
+		//// 全图IDCT变换，重新填入
+		//for (int i = 0; i < row; i += s)
+		//{
+		//	for (int j = 0; j < col; j += s)
+		//	{
+		//		Mat t_mat(s, s, cur_img.type());
+
+		//		for (int x = 0; x < s; x++)
+		//		{
+		//			for (int y = 0; y < s; y++)
+		//			{
+		//				t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+		//			}
+		//		}
+
+		//		idct(t_mat, t_mat);
+		//		for (int x = 0; x < s; x++)
+		//		{
+		//			for (int y = 0; y < s; y++)
+		//			{
+		//				cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+		//			}
+		//		}
+		//	}
+		//}
 	}
 
-	return dest;
-}
 
-Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
-	int times = 17, int a = 1, int b = 1, int c = 1, int d = 2)
-{
-	Mat src = read_bin_icon_and_resize(path, row, col);
-	src = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
-	src = chaos_xor(src, seed);
-
-	return src;
-}
-
-Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times =17,
-	int a = 2, int b = -1, int c = -1, int d = 1)
-{
-	Mat dest = src.clone();
-	if (~row || ~col)
-	{
-		resize(dest, dest, { row, col });
-	}
-	dest = chaos_xor(dest, seed);
-	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
-
-	return dest;
-}
-
-void test5()
-{
-	Mat src = get_icon_from_file_and_encrypt("lena512.png", 'zyc', 512, 512);
-	imshow("src", src);
-	imwrite("666.png", src);
-	Mat dest = decrypt_icon(src, 'zyc');
+	Mat dest;
+	merge(channels, dest);
 	imshow("dest", dest);
 
-	waitKey(0);
-}
+	// 防止保存时为全黑
+	normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
+	imwrite("2.png", dest);
 
-void test6()
-{
-	Mat src = imread("666.png", 0);
-	src = decrypt_icon(src, 'zyc', 512, 512);
-	imshow("dest", src);
+	printf("g_ct = %d\n", g_ct);
 	waitKey(0);
-
 }
 
 int main()
@@ -330,7 +420,8 @@ int main()
 	//test3();
 	//test4();
 	//test5();
-	test6();
+	//test6();
+	test7("lena512.png");
 
 	return 0;
 }

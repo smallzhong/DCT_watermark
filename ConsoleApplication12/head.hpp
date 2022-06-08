@@ -6,6 +6,7 @@
 #include <time.h>
 #include <limits.h>
 #include <vector>
+#include <bitset>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/utils/logger.hpp>
 
