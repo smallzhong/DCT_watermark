@@ -606,7 +606,6 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 		}
 	}
 
-	printf("cur = %d\n", cur);
 	Mat res(icon_row, icon_col, 0);
 	cur = 0;
 	for (int i = 0; i < icon_row; i++)
@@ -800,6 +799,20 @@ int main()
 	dest = 提取水印(src, 'zyc', 9, 90, 90);
 	show(dest);
 
+	srand(time(NULL));
+	if (rand() % 2)
+	{
+		printf("第一个是src\n");
+		show(src);
+		show(imread("lena512.png"));
+	}
+
+	else
+	{
+		printf("第二个是src\n");
+		show(imread("lena512.png"));
+		show(src);
+	}
 
 	waitKey(0);
 
