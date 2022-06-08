@@ -287,9 +287,9 @@ Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int 
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
 		// 全图DCT变换
-		for (int i = 0; i < row; i += matrix_cols)
+		for (int i = 0; i <= row - matrix_cols; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += matrix_cols)
+			for (int j = 0; j <= col - matrix_cols; j += matrix_cols)
 			{
 				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
@@ -340,7 +340,7 @@ Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int 
 		}
 
 		// 全图IDCT变换，重新填入
-		for (int i = 0; i < row; i += matrix_cols)
+		for (int i = 0; i <= row - matrix_cols; i += matrix_cols)
 		{
 			for (int j = 0; j < col; j += matrix_cols)
 			{
@@ -392,9 +392,9 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
 		// 全图DCT变换
-		for (int i = 0; i < row; i += matrix_cols)
+		for (int i = 0; i <= row - matrix_cols; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += matrix_cols)
+			for (int j = 0; j <= col - matrix_cols; j += matrix_cols)
 			{
 				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
@@ -445,9 +445,9 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_
 		}
 
 		// 全图IDCT变换，重新填入
-		for (int i = 0; i < row; i += matrix_cols)
+		for (int i = 0; i <= row - matrix_cols; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += matrix_cols)
+			for (int j = 0; j <= col - matrix_cols; j += matrix_cols)
 			{
 				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
@@ -499,9 +499,9 @@ Mat extract_watermark(string path, int icon_row, int icon_col, int img_row = -1,
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
 		// 全图DCT变换，提取
-		for (int i = 0; i < row; i += matrix_cols)
+		for (int i = 0; i <= row - matrix_cols; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += matrix_cols)
+			for (int j = 0; j <= col - matrix_cols; j += matrix_cols)
 			{
 				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
@@ -570,9 +570,9 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
 		// 全图DCT变换，提取
-		for (int i = 0; i < row; i += matrix_cols)
+		for (int i = 0; i <= row - matrix_cols; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += matrix_cols)
+			for (int j = 0; j <= col - matrix_cols; j += matrix_cols)
 			{
 				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
