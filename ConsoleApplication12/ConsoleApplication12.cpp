@@ -8,7 +8,7 @@ int a_x_embed = 3;
 int a_y_embed = 3;
 int b_x_embed = 3;
 int b_y_embed = 2;
-float embed_addup = .01;
+float embed_addup = .003;
 int matrix_cols = 4;
 
 #define DEFAULT_TIMES 17
@@ -621,7 +621,7 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 	return res;
 }
 
-Mat 嵌入水印(string img_path, string icon_path, uint seed)
+Mat 嵌入水印(string img_path, string icon_path, uint seed, int param = -1)
 {
 	Mat src = imread(img_path);
 	int max_capacity = (src.cols / 4) * (src.cols / 4) * 3; // 4*4作为最小单位，算出当前图像最多能存放多少bit
@@ -644,29 +644,104 @@ Mat 嵌入水印(string img_path, string icon_path, uint seed)
 
 	// 自适应地确定嵌入水印时选择的方阵大小
 	int t_matrix_cols = 8;
-	// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
-	auto check = [=](int col) -> bool {
-		int t_capa = (src.rows / col) * (src.cols / col) * 3;
-		if (t_capa < icon_bits) return false;
-		else return true;
-	};
 
-	// 如果8已经大了，那么不断减小
-	if (!check(t_matrix_cols))
+	// 如果没有自定义param
+	if (param == -1)
 	{
-		do
+
+		// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
+		auto check = [=](int col) -> bool {
+			int t_capa = (src.rows / col) * (src.cols / col) * 3;
+			if (t_capa < icon_bits) return false;
+			else return true;
+		};
+
+		// 如果8已经大了，那么不断减小
+		if (!check(t_matrix_cols))
 		{
+			do
+			{
+				t_matrix_cols--;
+			} while (!check(t_matrix_cols));
+		}
+		// 找到最大的矩阵宽度
+		else
+		{
+			do
+			{
+				t_matrix_cols++;
+			} while (check(t_matrix_cols));
 			t_matrix_cols--;
-		} while (!check(t_matrix_cols));
+		}
 	}
-	// 找到最大的矩阵宽度
 	else
 	{
-		do
+		t_matrix_cols = param;
+	}
+	set_global_params(t_matrix_cols);
+
+	bitset<bits_size> bits = get_icon_from_file_and_encrypt(icon_path, seed, 90, 90);
+
+	Mat embeded = embed_watermark(src, bits);
+	return embeded;
+}
+
+
+Mat 嵌入水印(Mat src, string icon_path, uint seed, int param = -1)
+{
+	int max_capacity = (src.cols / 4) * (src.cols / 4) * 3; // 4*4作为最小单位，算出当前图像最多能存放多少bit
+
+	Mat icon = imread(icon_path);
+	// 如果水印长宽不等，进行调整
+	if (icon.rows != icon.cols)
+	{
+		resize(icon, icon, { max(icon.rows, icon.cols) , max(icon.rows, icon.cols) });
+	}
+	int icon_bits = icon.rows * icon.rows;
+	// 如果发现容量不足
+	if (icon_bits > max_capacity)
+	{
+		int col_max = (int)(floor(sqrt(max_capacity)));
+		// 缩小到最大容量
+		resize(icon, icon, { col_max, col_max });
+		icon_bits = col_max * col_max; // 更新icon_bit
+	}
+
+	// 自适应地确定嵌入水印时选择的方阵大小
+	int t_matrix_cols = 8;
+
+	// 如果没有自定义param
+	if (param == -1)
+	{
+
+		// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
+		auto check = [=](int col) -> bool {
+			int t_capa = (src.rows / col) * (src.cols / col) * 3;
+			if (t_capa < icon_bits) return false;
+			else return true;
+		};
+
+		// 如果8已经大了，那么不断减小
+		if (!check(t_matrix_cols))
 		{
-			t_matrix_cols++;
-		} while (check(t_matrix_cols));
-		t_matrix_cols--;
+			do
+			{
+				t_matrix_cols--;
+			} while (!check(t_matrix_cols));
+		}
+		// 找到最大的矩阵宽度
+		else
+		{
+			do
+			{
+				t_matrix_cols++;
+			} while (check(t_matrix_cols));
+			t_matrix_cols--;
+		}
+	}
+	else
+	{
+		t_matrix_cols = param;
 	}
 	set_global_params(t_matrix_cols);
 
@@ -708,10 +783,24 @@ int main()
 {
 	init();
 
-	//Mat src = 嵌入水印("lena512.png", "icon.png", 'zyc');
-	//imwrite("embeded.png", src);
-	Mat dest = 提取水印("embeded.png", 'zyc', 9, 90, 90);
+	Mat src, dest;
+
+	src = imread("lena512.png");
+	src = 嵌入水印(src, "icon.png", 'zyc', 4);
+	src = 嵌入水印(src, "icon.png", 'zyc', 6);
+	src = 嵌入水印(src, "icon.png", 'zyc', 8);
+	src = 嵌入水印(src, "icon.png", 'zyc', 9);
+
+	dest = 提取水印(src, 'zyc', 4, 90, 90);
 	show(dest);
+	dest = 提取水印(src, 'zyc', 6, 90, 90);
+	show(dest);
+	dest = 提取水印(src, 'zyc', 8, 90, 90);
+	show(dest);
+	dest = 提取水印(src, 'zyc', 9, 90, 90);
+	show(dest);
+
+
 	waitKey(0);
 
 	return 0;
