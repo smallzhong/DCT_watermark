@@ -3,6 +3,8 @@
 using namespace cv;
 
 int ct = 0;
+const int bits_size = 1e5 + 10;
+
 #define show(a) imshow(to_string(ct ++ ), a)
 void init()
 {
@@ -189,14 +191,26 @@ Mat chaos_xor(Mat& src, uint seed)
 	return dest;
 }
 
-Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
+bitset<bits_size> get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
 	int times = 17, int a = 1, int b = 1, int c = 1, int d = 2)
 {
 	Mat src = read_bin_icon_and_resize(path, row, col);
 	src = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
-	src = chaos_xor(src, seed);
 
-	return src;
+	srand(seed);
+	bitset<bits_size> bits;
+	int cur = 0;
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			int t = src.at<uchar>(i, j) ? 1 : 0;
+			t ^= (rand() % 2);
+			bits[cur++] = t & 1;
+		}
+	}
+
+	return bits;
 }
 
 Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times = 17,
@@ -207,22 +221,23 @@ Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times = 17
 	{
 		resize(dest, dest, { row, col });
 	}
-	dest = chaos_xor(dest, seed);
+
+	srand(seed);
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			int t = (rand() % 2) * UCHAR_MAX;
+			dest.at<uchar>(i, j) ^= t;
+		}
+	}
+
 	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
 
 	return dest;
 }
 
-void test5()
-{
-	Mat src = get_icon_from_file_and_encrypt("lena512.png", 'zyc', 512, 512);
-	imshow("src", src);
-	imwrite("666.png", src);
-	Mat dest = decrypt_icon(src, 'zyc');
-	imshow("dest", dest);
 
-	waitKey(0);
-}
 
 void test6()
 {
@@ -232,16 +247,15 @@ void test6()
 	waitKey(0);
 }
 
-const int bits_size = 1e5 + 10;
 const int a_x_embed = 7;
 const int a_y_embed = 7;
 const int b_x_embed = 6;
 const int b_y_embed = 7;
+const float embed_addup = .005;
 
 Mat embed_watermark(string path, bitset<bits_size>& bits)
 {
 	Mat src = imread(path);
-	show(src);
 	int cur = 0;
 	int row = src.rows, col = src.cols;
 
@@ -269,7 +283,7 @@ Mat embed_watermark(string path, bitset<bits_size>& bits)
 
 				dct(t_mat, t_mat);
 
-				
+
 				float a = t_mat.at<float>(a_x_embed, a_y_embed);
 				float b = t_mat.at<float>(b_x_embed, b_y_embed);
 				// a>b表示1，a<b表示0
@@ -285,13 +299,13 @@ Mat embed_watermark(string path, bitset<bits_size>& bits)
 
 				if (a > b)
 				{
-					t_mat.at<float>(a_x_embed, a_y_embed) += .005;
-					t_mat.at<float>(b_x_embed, b_y_embed) -= .005;
+					t_mat.at<float>(a_x_embed, a_y_embed) += embed_addup;
+					t_mat.at<float>(b_x_embed, b_y_embed) -= embed_addup;
 				}
 				else
 				{
-					t_mat.at<float>(a_x_embed, a_y_embed) -= .005;
-					t_mat.at<float>(b_x_embed, b_y_embed) += .005;
+					t_mat.at<float>(a_x_embed, a_y_embed) -= embed_addup;
+					t_mat.at<float>(b_x_embed, b_y_embed) += embed_addup;
 				}
 
 				cur++;
@@ -402,7 +416,7 @@ Mat extract_watermark(string path, int icon_row, int icon_col)
 	{
 		for (int j = 0; j < icon_col; j++)
 		{
-			if (bits[cur++] == 1) res.at<uchar>(i, j) = 255;
+			if (bits[cur++] == 1) res.at<uchar>(i, j) = UCHAR_MAX;
 			else res.at<uchar>(i, j) = 0;
 		}
 	}
@@ -482,22 +496,16 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col)
 
 void test10()
 {
-	Mat icon = get_bin_image("icon.png");
-	bitset<bits_size> bits;
-	int pos = 0;
-	for (int i = 0; i < icon.rows; i++)
-	{
-		for (int j = 0; j < icon.cols; j++)
-		{
-			bits[pos++] = icon.at<uchar>(i, j) ? 1 : 0;
-		}
-	}
+	//Mat icon = get_bin_image("icon.png");
+	bitset<bits_size> bits = get_icon_from_file_and_encrypt("icon.png", 'zyc', 90, 90);
+	waitKey(1000);
 
 	Mat embeded = embed_watermark("lena512.png", bits);
-	Mat extracted_icon = extract_watermark(embeded, icon.rows, icon.cols);
-	show(icon);
-	show(embeded);
+	Mat extracted_icon = extract_watermark(embeded, 90, 90);
+	//show(extracted_icon);
+	extracted_icon = decrypt_icon(extracted_icon, 'zyc', 90, 90);
 	show(extracted_icon);
+	//show(embeded);
 
 
 	waitKey(0);
