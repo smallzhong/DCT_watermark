@@ -4,10 +4,10 @@ using namespace cv;
 
 int ct = 0;
 const int bits_size = 1e5 + 10;
-const int a_x_embed = 7;
-const int a_y_embed = 7;
-const int b_x_embed = 6;
-const int b_y_embed = 7;
+const int a_x_embed = 3;
+const int a_y_embed = 3;
+const int b_x_embed = 3;
+const int b_y_embed = 2;
 const float embed_addup = .01;
 
 #define DEFAULT_TIMES 17
@@ -266,17 +266,17 @@ Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int 
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		int s = 8;
+		int matrix_cols = 4;
 		// 全图DCT变换
-		for (int i = 0; i < row; i += s)
+		for (int i = 0; i < row; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += s)
+			for (int j = 0; j < col; j += matrix_cols)
 			{
-				Mat t_mat(s, s, cur_img.type());
+				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
 					}
@@ -310,9 +310,9 @@ Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int 
 				}
 
 				cur++;
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 					}
@@ -321,24 +321,24 @@ Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int 
 		}
 
 		// 全图IDCT变换，重新填入
-		for (int i = 0; i < row; i += s)
+		for (int i = 0; i < row; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += s)
+			for (int j = 0; j < col; j += matrix_cols)
 			{
-				Mat t_mat(s, s, cur_img.type());
+				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
 					}
 				}
 
 				idct(t_mat, t_mat);
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 					}
@@ -372,17 +372,17 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		int s = 8;
+		int matrix_cols = 4;
 		// 全图DCT变换
-		for (int i = 0; i < row; i += s)
+		for (int i = 0; i < row; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += s)
+			for (int j = 0; j < col; j += matrix_cols)
 			{
-				Mat t_mat(s, s, cur_img.type());
+				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
 					}
@@ -416,9 +416,9 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_
 				}
 
 				cur++;
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 					}
@@ -427,24 +427,24 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_
 		}
 
 		// 全图IDCT变换，重新填入
-		for (int i = 0; i < row; i += s)
+		for (int i = 0; i < row; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += s)
+			for (int j = 0; j < col; j += matrix_cols)
 			{
-				Mat t_mat(s, s, cur_img.type());
+				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
 					}
 				}
 
 				idct(t_mat, t_mat);
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 					}
@@ -480,17 +480,17 @@ Mat extract_watermark(string path, int icon_row, int icon_col, int img_row = -1,
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		int s = 8;
+		int matrix_cols = 4;
 		// 全图DCT变换，提取
-		for (int i = 0; i < row; i += s)
+		for (int i = 0; i < row; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += s)
+			for (int j = 0; j < col; j += matrix_cols)
 			{
-				Mat t_mat(s, s, cur_img.type());
+				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
 					}
@@ -509,9 +509,9 @@ Mat extract_watermark(string path, int icon_row, int icon_col, int img_row = -1,
 				{
 					bits[cur++] = 0;
 				}
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 
@@ -553,17 +553,17 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
 
-		int s = 8;
+		int matrix_cols = 4;
 		// 全图DCT变换，提取
-		for (int i = 0; i < row; i += s)
+		for (int i = 0; i < row; i += matrix_cols)
 		{
-			for (int j = 0; j < col; j += s)
+			for (int j = 0; j < col; j += matrix_cols)
 			{
-				Mat t_mat(s, s, cur_img.type());
+				Mat t_mat(matrix_cols, matrix_cols, cur_img.type());
 
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
 					}
@@ -582,9 +582,9 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 				{
 					bits[cur++] = 0;
 				}
-				for (int x = 0; x < s; x++)
+				for (int x = 0; x < matrix_cols; x++)
 				{
-					for (int y = 0; y < s; y++)
+					for (int y = 0; y < matrix_cols; y++)
 					{
 						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 
@@ -611,11 +611,11 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 
 void test10()
 {
+	Mat src = imread("lena512.png");
+	//int max_capacity = src.cols 
 	bitset<bits_size> bits = get_icon_from_file_and_encrypt("icon.png", 'zyc', 90, 90);
-	waitKey(1000);
 
-	Mat embeded = embed_watermark("lena512.png", bits);
-	//show(embeded);
+	Mat embeded = embed_watermark(src, bits);
 	imwrite("embeded.png", embeded);
 }
 
@@ -633,8 +633,7 @@ int main()
 {
 	init();
 
-	//show(imread("lena512.png"));
-	//test10();
+	test10();
 	test11();
 
 	//waitKey(0);
