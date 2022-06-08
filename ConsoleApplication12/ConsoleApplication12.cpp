@@ -188,9 +188,6 @@ bitset<bits_size> get_bitset_from_mat(Mat src)
 	return bits;
 }
 
-int g_ct = 0;
-
-
 Mat read_bin_icon_and_resize(string path, int row, int col)
 {
 	Mat src = get_bin_image(path);
@@ -624,7 +621,7 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 	return res;
 }
 
-void 嵌入水印(string img_path, string icon_path, uint seed = 'zyc')
+Mat 嵌入水印(string img_path, string icon_path, uint seed)
 {
 	Mat src = imread(img_path);
 	int max_capacity = (src.cols / 4) * (src.cols / 4) * 3; // 4*4作为最小单位，算出当前图像最多能存放多少bit
@@ -676,28 +673,47 @@ void 嵌入水印(string img_path, string icon_path, uint seed = 'zyc')
 	bitset<bits_size> bits = get_icon_from_file_and_encrypt(icon_path, seed, 90, 90);
 
 	Mat embeded = embed_watermark(src, bits);
-	imwrite("embeded.png", embeded);
+	return embeded;
 }
 
-void test11()
+Mat 提取水印(string path, uint seed, int param, int icon_row, int icon_col, int img_row = -1, int img_col = -1)
 {
-	Mat extracted_icon = extract_watermark("embeded.png", 90, 90, 512, 512);
+	assert(icon_col == icon_row);
+	set_global_params(param);
 
-	extracted_icon = decrypt_watermark(extracted_icon, 'zyc', 90, 90);
+	Mat src = imread(path);
+	if (~img_row) img_row = src.rows;
+	if (~img_col) img_col = src.cols;
 
-	show(extracted_icon);
-	waitKey(0);
+	Mat extracted_icon = extract_watermark(src, icon_row, icon_col, img_row, img_col);
+	extracted_icon = decrypt_watermark(extracted_icon, seed, icon_row, icon_col);
+	return extracted_icon;
 }
+
+Mat 提取水印(Mat src, uint seed, int param, int icon_row, int icon_col, int img_row = -1, int img_col = -1)
+{
+	assert(icon_col == icon_row);
+	set_global_params(param);
+
+	if (~img_row) img_row = src.rows;
+	if (~img_col) img_col = src.cols;
+
+	Mat extracted_icon = extract_watermark(src, icon_row, icon_col, img_row, img_col);
+	extracted_icon = decrypt_watermark(extracted_icon, seed, icon_row, icon_col);
+	return extracted_icon;
+}
+
 
 int main()
 {
 	init();
 
-	//test10();
-	嵌入水印("lena512.png", "icon.png");
-	test11();
+	//Mat src = 嵌入水印("lena512.png", "icon.png", 'zyc');
+	//imwrite("embeded.png", src);
+	Mat dest = 提取水印("embeded.png", 'zyc', 9, 90, 90);
+	show(dest);
+	waitKey(0);
 
-	//waitKey(0);
 	return 0;
 }
 
