@@ -8,7 +8,7 @@ const int a_x_embed = 7;
 const int a_y_embed = 7;
 const int b_x_embed = 6;
 const int b_y_embed = 7;
-const float embed_addup = .005;
+const float embed_addup = .01;
 
 #define DEFAULT_TIMES 17
 
@@ -130,9 +130,6 @@ Mat get_bin_image(string path)
 		//puts("");
 	}
 
-	//imshow("src", src);
-	//waitKey(0);
-
 	return src;
 }
 
@@ -252,18 +249,6 @@ Mat decrypt_watermark(Mat& src, uint seed, int row = -1, int col = -1, int times
 	return dest;
 }
 
-
-
-void test6()
-{
-	Mat src = imread("666.png", 0);
-	src = decrypt_watermark(src, 'zyc', 512, 512);
-	imshow("dest", src);
-	waitKey(0);
-}
-
-
-
 Mat embed_watermark(string path, bitset<bits_size>& bits)
 {
 	Mat src = imread(path);
@@ -366,8 +351,13 @@ Mat embed_watermark(string path, bitset<bits_size>& bits)
 	return dest;
 }
 
-Mat embed_watermark(Mat src, bitset<bits_size>& bits)
+Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_col = -1)
 {
+	if (~img_row || ~img_col)
+	{
+		resize(src, src, { img_row, img_col });
+	}
+
 	int cur = 0;
 	int row = src.rows, col = src.cols;
 
@@ -467,9 +457,14 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits)
 	return dest;
 }
 
-Mat extract_watermark(string path, int icon_row, int icon_col)
+Mat extract_watermark(string path, int icon_row, int icon_col, int img_row = -1, int img_col = -1)
 {
 	Mat src = imread(path);
+	if (~img_row || ~img_col)
+	{
+		resize(src, src, { img_row, img_col });
+	}
+
 	int cur = 0;
 	bitset<bits_size> bits;
 	int row = src.rows, col = src.cols;
@@ -478,7 +473,6 @@ Mat extract_watermark(string path, int icon_row, int icon_col)
 	split(src, channels);
 	for (auto& cur_img : channels)
 	{
-		show(cur_img);
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
 		int s = 8;
@@ -612,13 +606,13 @@ void test10()
 	waitKey(1000);
 
 	Mat embeded = embed_watermark("lena512.png", bits);
-	show(embeded);
+	//show(embeded);
 	imwrite("embeded.png", embeded);
 }
 
 void test11()
 {
-	Mat extracted_icon = extract_watermark("embeded.png", 90, 90);
+	Mat extracted_icon = extract_watermark("embeded.png", 90, 90, 512, 512);
 
 	extracted_icon = decrypt_watermark(extracted_icon, 'zyc', 90, 90);
 
@@ -630,16 +624,8 @@ int main()
 {
 	init();
 
-	//test1();
-	//test2();
-	//test3();
-	//test4();
-	//test5();
-	//test6();
-	//test7("lena512.png");
-	//test8("1.png");
-	//test8("2.png");
-	test10();
+	//show(imread("lena512.png"));
+	//test10();
 	test11();
 
 	//waitKey(0);
