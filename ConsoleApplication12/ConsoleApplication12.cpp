@@ -232,294 +232,16 @@ void test6()
 	waitKey(0);
 }
 
-void test4()
-{
-	Mat src = imread("lena512.png");
-	int row = src.rows, col = src.cols;
-
-	imshow("src", src);
-	printf("src.type() = %d\n", src.type());
-	printf("CV_32F = %d CV_32FC1 = %d CV_32FC3 = %d\n", CV_32F, CV_32FC1, CV_32FC3);
-	vector<Mat> channels;
-	split(src, channels);
-	printf("channels.size() = %d\n", channels.size());
-	for (auto& cur_img : channels)
-	{
-		Mat dest;
-		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
-		dct(cur_img, dest, 0);
-
-		int s = 2;
-		// 全图dct变换，8*8
-		for (int i = 0; i < row; i += s)
-		{
-			for (int j = 0; j < col; j += s)
-			{
-				Mat t_mat(s, s, cur_img.type());
-
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-					}
-				}
-
-				dct(t_mat, t_mat);
-
-				float a = t_mat.at<float>(s - 1, 0);
-				float b = t_mat.at<float>(0, s - 1);
-				if (a < b)
-				{
-					swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
-					g_ct++;
-				}
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-
-					}
-				}
-			}
-		}
-
-		// 全图逆dct变换，8*8
-		for (int i = 0; i < row; i += s)
-		{
-			for (int j = 0; j < col; j += s)
-			{
-				Mat t_mat(s, s, cur_img.type());
-
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-					}
-				}
-
-				idct(t_mat, t_mat);
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-					}
-				}
-			}
-		}
-	}
-
-	Mat dest;
-	merge(channels, dest);
-	imshow("dest", dest);
-
-	printf("g_ct = %d\n", g_ct);
-	waitKey(0);
-}
-
-void test8(Mat src);
-void test7(string path)
-{
-	// TODO:以后可以考虑封装一个可变长bitset的类，每次1.5倍增加大小，重载[]符号
-	bitset<100000> res;
-	Mat src = imread(path);
-	imwrite("1.png", src);
-	int row = src.rows, col = src.cols;
-
-	vector<Mat> channels;
-	split(src, channels);
-	for (auto& cur_img : channels)
-	{
-		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
-		//imshow(to_string(ct++), cur_img);
-
-		int s = 8;
-		// 全图DCT变换，置换高频
-		for (int i = 0; i < row; i += s)
-		{
-			for (int j = 0; j < col; j += s)
-			{
-				Mat t_mat(s, s, cur_img.type());
-
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-					}
-				}
-
-				dct(t_mat, t_mat);
-
-				float a = t_mat.at<float>(s - 1, 0);
-				float b = t_mat.at<float>(0, s - 1);
-				if (a < b)
-				{
-					swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
-					g_ct++;
-				}
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-
-					}
-				}
-			}
-		}
-
-		// 全图IDCT变换，重新填入
-		for (int i = 0; i < row; i += s)
-		{
-			for (int j = 0; j < col; j += s)
-			{
-				Mat t_mat(s, s, cur_img.type());
-
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-					}
-				}
-
-				idct(t_mat, t_mat);
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-					}
-				}
-			}
-		}
-	}
-
-
-	Mat dest;
-	merge(channels, dest);
-	//imshow("dest", dest);
-
-	// 防止保存时为全黑
-	test8(dest);
-	//normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
-	dest.convertTo(dest, CV_8UC3, 255. / 255.);
-	test8(dest);
-	imwrite("2.png", dest);
-
-	printf("g_ct = %d\n", g_ct);
-	waitKey(0);
-}
-
-void test8(Mat src)
-{
-	int corr = 0;
-	int wrong = 0;
-	// TODO:以后可以考虑封装一个可变长bitset的类，每次1.5倍增加大小，重载[]符号
-	bitset<100000> res;
-	//Mat src = imread(path);
-	int row = src.rows, col = src.cols;
-
-	vector<Mat> channels;
-	split(src, channels);
-	for (auto& cur_img : channels)
-	{
-		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
-		//imshow(to_string(ct++), cur_img);
-
-		int s = 8;
-		// 全图DCT变换
-		for (int i = 0; i < row; i += s)
-		{
-			for (int j = 0; j < col; j += s)
-			{
-				Mat t_mat(s, s, cur_img.type());
-
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-					}
-				}
-
-				dct(t_mat, t_mat);
-
-				float a = t_mat.at<float>(s - 1, 0);
-				float b = t_mat.at<float>(0, s - 1);
-				/*if (a < b)
-				{
-					swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
-					g_ct++;
-				}*/
-				float eps = 1e-5;
-				if (a > b || fabs(a - b) < eps)
-				{
-					corr++;
-				}
-				else
-				{
-					wrong++;
-					//printf("a = %f b = %f\n", a, b);
-				}
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-
-					}
-				}
-			}
-		}
-
-		// 全图IDCT变换，重新填入
-		for (int i = 0; i < row; i += s)
-		{
-			for (int j = 0; j < col; j += s)
-			{
-				Mat t_mat(s, s, cur_img.type());
-
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-					}
-				}
-
-				idct(t_mat, t_mat);
-				for (int x = 0; x < s; x++)
-				{
-					for (int y = 0; y < s; y++)
-					{
-						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-					}
-				}
-			}
-		}
-	}
-
-
-	Mat dest;
-	merge(channels, dest);
-	imshow("dest", dest);
-
-	// 防止保存时为全黑
-	normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
-	printf("corr = %d wrong = %d\n", corr, wrong);
-
-	//waitKey(0);
-}
-
 const int bits_size = 1e5 + 10;
+const int a_x_embed = 7;
+const int a_y_embed = 7;
+const int b_x_embed = 6;
+const int b_y_embed = 7;
+
 Mat embed_watermark(string path, bitset<bits_size>& bits)
 {
 	Mat src = imread(path);
+	show(src);
 	int cur = 0;
 	int row = src.rows, col = src.cols;
 
@@ -547,8 +269,9 @@ Mat embed_watermark(string path, bitset<bits_size>& bits)
 
 				dct(t_mat, t_mat);
 
-				float a = t_mat.at<float>(s - 1, 0);
-				float b = t_mat.at<float>(0, s - 1);
+				
+				float a = t_mat.at<float>(a_x_embed, a_y_embed);
+				float b = t_mat.at<float>(b_x_embed, b_y_embed);
 				// a>b表示1，a<b表示0
 				if (((a > b) && (bits[cur] == 1)) || ((a < b) && (bits[cur] == 0)))
 				{
@@ -556,7 +279,19 @@ Mat embed_watermark(string path, bitset<bits_size>& bits)
 				}
 				else
 				{
-					swap(t_mat.at<float>(s - 1, 0), t_mat.at<float>(0, s - 1));
+					swap(t_mat.at<float>(a_x_embed, a_y_embed), t_mat.at<float>(b_x_embed, b_y_embed));
+					swap(a, b);
+				}
+
+				if (a > b)
+				{
+					t_mat.at<float>(a_x_embed, a_y_embed) += .005;
+					t_mat.at<float>(b_x_embed, b_y_embed) -= .005;
+				}
+				else
+				{
+					t_mat.at<float>(a_x_embed, a_y_embed) -= .005;
+					t_mat.at<float>(b_x_embed, b_y_embed) += .005;
 				}
 
 				cur++;
@@ -599,7 +334,6 @@ Mat embed_watermark(string path, bitset<bits_size>& bits)
 
 	Mat dest;
 	merge(channels, dest);
-	show(dest);
 
 	// 防止保存时为全黑
 	normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
@@ -639,8 +373,8 @@ Mat extract_watermark(string path, int icon_row, int icon_col)
 
 				dct(t_mat, t_mat);
 
-				float a = t_mat.at<float>(s - 1, 0);
-				float b = t_mat.at<float>(0, s - 1);
+				float a = t_mat.at<float>(a_x_embed, a_y_embed);
+				float b = t_mat.at<float>(b_x_embed, b_y_embed);
 				// a>b表示1，a<b表示0
 				if (a > b)
 				{
@@ -689,7 +423,7 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col)
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		
+
 		int s = 8;
 		// 全图DCT变换，提取
 		for (int i = 0; i < row; i += s)
@@ -708,8 +442,8 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col)
 
 				dct(t_mat, t_mat);
 
-				float a = t_mat.at<float>(s - 1, 0);
-				float b = t_mat.at<float>(0, s - 1);
+				float a = t_mat.at<float>(a_x_embed, a_y_embed);
+				float b = t_mat.at<float>(b_x_embed, b_y_embed);
 				// a>b表示1，a<b表示0
 				if (a > b)
 				{
@@ -749,7 +483,6 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col)
 void test10()
 {
 	Mat icon = get_bin_image("icon.png");
-	show(icon);
 	bitset<bits_size> bits;
 	int pos = 0;
 	for (int i = 0; i < icon.rows; i++)
@@ -761,9 +494,11 @@ void test10()
 	}
 
 	Mat embeded = embed_watermark("lena512.png", bits);
-	show(embeded);
 	Mat extracted_icon = extract_watermark(embeded, icon.rows, icon.cols);
+	show(icon);
+	show(embeded);
 	show(extracted_icon);
+
 
 	waitKey(0);
 }
