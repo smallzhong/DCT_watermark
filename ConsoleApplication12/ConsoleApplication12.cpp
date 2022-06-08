@@ -4,6 +4,14 @@ using namespace cv;
 
 int ct = 0;
 const int bits_size = 1e5 + 10;
+const int a_x_embed = 7;
+const int a_y_embed = 7;
+const int b_x_embed = 6;
+const int b_y_embed = 7;
+const float embed_addup = .005;
+
+#define DEFAULT_TIMES 17
+
 
 #define show(a) imshow(to_string(ct ++ ), a)
 void init()
@@ -30,7 +38,7 @@ enum ARNOLD_TYPE
 /// <param name="c">自定义时矩阵参数</param>
 /// <param name="d">自定义时矩阵参数</param>
 /// <returns>完成arnold置换后的图片</returns>
-Mat Arnold(Mat& img, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL, int times = 1,
+Mat Arnold(Mat& img, ARNOLD_TYPE arnold_type = YC_ARNOLD_NORMAL, int times = DEFAULT_TIMES,
 	int a = 1, int b = 1, int c = 1, int d = 2)
 {
 	int img_type = img.type();
@@ -128,32 +136,39 @@ Mat get_bin_image(string path)
 	return src;
 }
 
-void test1()
+bitset<bits_size> chaos_xor_mat(Mat src, uint seed)
 {
-	Mat src = imread("lena512.png");
-	printf("%d %d\n", src.type(), CV_8UC3);
-	Mat dest = Arnold(src, YC_ARNOLD_NORMAL, 20);
+	int row = src.rows, col = src.cols;
+	srand(seed);
+	bitset<bits_size> bits;
+	int cur = 0;
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			int t = src.at<uchar>(i, j) ? 1 : 0;
+			t ^= (rand() % 2);
+			bits[cur++] = t & 1;
+		}
+	}
 
-	//imshow("src", src);
-	//imshow("dest", Arnold(dest, YC_ARNOLD_REVERSE));
-
-	imwrite("out.png", dest);
+	return bits;
 }
 
-void test2()
+bitset<bits_size> get_bitset_from_mat(Mat src)
 {
+	int cur = 0;
+	bitset<bits_size> bits;
+	for (int i = 0; i < src.rows; i++)
+	{
+		for (int j = 0; j < src.cols; j++)
+		{
+			if (src.at<uchar>(i, j)) bits[cur++] = 1;
+			else bits[cur++] = 0;
+		}
+	}
 
-	Mat src = imread("out.png");
-	resize(src, src, { 512, 512 });
-	src = Arnold(src, YC_ARNOLD_REVERSE, 20);
-	imshow("src", src);
-
-	waitKey(0);
-}
-
-void test3()
-{
-	get_bin_image("lena512.png");
+	return bits;
 }
 
 int g_ct = 0;
@@ -192,7 +207,7 @@ Mat chaos_xor(Mat& src, uint seed)
 }
 
 bitset<bits_size> get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
-	int times = 17, int a = 1, int b = 1, int c = 1, int d = 2)
+	int times = DEFAULT_TIMES, int a = 1, int b = 1, int c = 1, int d = 2)
 {
 	Mat src = read_bin_icon_and_resize(path, row, col);
 	src = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
@@ -213,7 +228,7 @@ bitset<bits_size> get_icon_from_file_and_encrypt(string path, uint seed, int row
 	return bits;
 }
 
-Mat decrypt_watermark(Mat& src, uint seed, int row = -1, int col = -1, int times = 17,
+Mat decrypt_watermark(Mat& src, uint seed, int row = -1, int col = -1, int times = DEFAULT_TIMES,
 	int a = 2, int b = -1, int c = -1, int d = 1)
 {
 	Mat dest = src.clone();
@@ -247,15 +262,112 @@ void test6()
 	waitKey(0);
 }
 
-const int a_x_embed = 7;
-const int a_y_embed = 7;
-const int b_x_embed = 6;
-const int b_y_embed = 7;
-const float embed_addup = .005;
+
 
 Mat embed_watermark(string path, bitset<bits_size>& bits)
 {
 	Mat src = imread(path);
+	int cur = 0;
+	int row = src.rows, col = src.cols;
+
+	vector<Mat> channels;
+	split(src, channels);
+	for (auto& cur_img : channels)
+	{
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+
+		int s = 8;
+		// 全图DCT变换
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				dct(t_mat, t_mat);
+
+
+				float a = t_mat.at<float>(a_x_embed, a_y_embed);
+				float b = t_mat.at<float>(b_x_embed, b_y_embed);
+				// a>b表示1，a<b表示0
+				if (((a > b) && (bits[cur] == 1)) || ((a < b) && (bits[cur] == 0)))
+				{
+
+				}
+				else
+				{
+					swap(t_mat.at<float>(a_x_embed, a_y_embed), t_mat.at<float>(b_x_embed, b_y_embed));
+					swap(a, b);
+				}
+
+				if (a > b)
+				{
+					t_mat.at<float>(a_x_embed, a_y_embed) += embed_addup;
+					t_mat.at<float>(b_x_embed, b_y_embed) -= embed_addup;
+				}
+				else
+				{
+					t_mat.at<float>(a_x_embed, a_y_embed) -= embed_addup;
+					t_mat.at<float>(b_x_embed, b_y_embed) += embed_addup;
+				}
+
+				cur++;
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
+
+		// 全图IDCT变换，重新填入
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				idct(t_mat, t_mat);
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
+	}
+
+	Mat dest;
+	merge(channels, dest);
+
+	// 防止保存时为全黑
+	normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
+
+	return dest;
+}
+
+Mat embed_watermark(Mat src, bitset<bits_size>& bits)
+{
 	int cur = 0;
 	int row = src.rows, col = src.cols;
 
@@ -496,18 +608,21 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col)
 
 void test10()
 {
-	//Mat icon = get_bin_image("icon.png");
 	bitset<bits_size> bits = get_icon_from_file_and_encrypt("icon.png", 'zyc', 90, 90);
 	waitKey(1000);
 
 	Mat embeded = embed_watermark("lena512.png", bits);
-	Mat extracted_icon = extract_watermark(embeded, 90, 90);
+	show(embeded);
+	imwrite("embeded.png", embeded);
+}
+
+void test11()
+{
+	Mat extracted_icon = extract_watermark("embeded.png", 90, 90);
 
 	extracted_icon = decrypt_watermark(extracted_icon, 'zyc', 90, 90);
 
 	show(extracted_icon);
-
-
 	waitKey(0);
 }
 
@@ -525,6 +640,7 @@ int main()
 	//test8("1.png");
 	//test8("2.png");
 	test10();
+	test11();
 
 	//waitKey(0);
 	return 0;
