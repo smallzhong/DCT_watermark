@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <vector>
 #include <bitset>
+#include <math.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/utils/logger.hpp>
 

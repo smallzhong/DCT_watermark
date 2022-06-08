@@ -4,21 +4,35 @@ using namespace cv;
 
 int ct = 0;
 const int bits_size = 1e5 + 10;
-const int a_x_embed = 3;
-const int a_y_embed = 3;
-const int b_x_embed = 3;
-const int b_y_embed = 2;
-const float embed_addup = .01;
+int a_x_embed = 3;
+int a_y_embed = 3;
+int b_x_embed = 3;
+int b_y_embed = 2;
+float embed_addup = .01;
+int matrix_cols = 4;
 
 #define DEFAULT_TIMES 17
 
 #define show(a) imshow(to_string(ct ++ ), a)
 
-void set_param()
+void set_global_params(int col)
 {
 	int* p = (int*)(&a_x_embed);
-	*p = 3;
+	*p = col - 1;
 
+	p = (int*)(&a_y_embed);
+	*p = col - 1;
+
+	p = (int*)(&b_x_embed);
+	*p = col - 1;
+
+	p = (int*)(&b_y_embed);
+	*p = col - 2;
+
+	p = (int*)(&matrix_cols);
+	*p = col;
+
+	printf("修改全局变量完成！%d %d %d %d %d\n", a_x_embed, a_y_embed, b_x_embed, b_y_embed, matrix_cols);
 }
 void init()
 {
@@ -272,7 +286,6 @@ Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int 
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		int matrix_cols = 4;
 		// 全图DCT变换
 		for (int i = 0; i < row; i += matrix_cols)
 		{
@@ -378,7 +391,6 @@ Mat embed_watermark(Mat src, bitset<bits_size>& bits, int img_row = -1, int img_
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		int matrix_cols = 4;
 		// 全图DCT变换
 		for (int i = 0; i < row; i += matrix_cols)
 		{
@@ -486,7 +498,6 @@ Mat extract_watermark(string path, int icon_row, int icon_col, int img_row = -1,
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-		int matrix_cols = 4;
 		// 全图DCT变换，提取
 		for (int i = 0; i < row; i += matrix_cols)
 		{
@@ -558,8 +569,6 @@ Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int
 	{
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 
-
-		int matrix_cols = 4;
 		// 全图DCT变换，提取
 		for (int i = 0; i < row; i += matrix_cols)
 		{
@@ -639,19 +648,19 @@ void 嵌入水印(string img_path, string icon_path, uint seed = 'zyc')
 	// 自适应地确定嵌入水印时选择的方阵大小
 	int t_matrix_cols = 8;
 	// 返回false表示方阵设置得太大了，会放不下。true表示这个可以
-	auto check = [=]() -> bool {
-		int t_capa = (src.rows / t_matrix_cols) * (src.cols / t_matrix_cols) * 3;
+	auto check = [=](int col) -> bool {
+		int t_capa = (src.rows / col) * (src.cols / col) * 3;
 		if (t_capa < icon_bits) return false;
 		else return true;
 	};
 
 	// 如果8已经大了，那么不断减小
-	if (!check())
+	if (!check(t_matrix_cols))
 	{
 		do
 		{
 			t_matrix_cols--;
-		} while (!check());
+		} while (!check(t_matrix_cols));
 	}
 	// 找到最大的矩阵宽度
 	else
@@ -659,9 +668,10 @@ void 嵌入水印(string img_path, string icon_path, uint seed = 'zyc')
 		do
 		{
 			t_matrix_cols++;
-		} while (check());
+		} while (check(t_matrix_cols));
 		t_matrix_cols--;
 	}
+	set_global_params(t_matrix_cols);
 
 	bitset<bits_size> bits = get_icon_from_file_and_encrypt(icon_path, seed, 90, 90);
 
@@ -683,7 +693,8 @@ int main()
 {
 	init();
 
-	test10();
+	//test10();
+	嵌入水印("lena512.png", "icon.png");
 	test11();
 
 	//waitKey(0);
