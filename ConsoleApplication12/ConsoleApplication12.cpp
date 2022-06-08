@@ -281,21 +281,22 @@ Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
 	int times = 1, int a = 1, int b = 1, int c = 1, int d = 2)
 {
 	Mat src = read_bin_icon_and_resize(path, row, col);
-	Mat dest;
-	dest = chaos_xor(src, seed);
-	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
+	src = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
+	src = chaos_xor(src, seed);
 
-	return dest;
+	return src;
 }
 
-Mat decrypt_icon(Mat& src, uint seed, int times =1,
+Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times =1,
 	int a = 2, int b = -1, int c = -1, int d = 1)
 {
 	Mat dest = src.clone();
-	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
-	imshow("arnold", dest);
+	if (~row || ~col)
+	{
+		resize(dest, dest, { row, col });
+	}
 	dest = chaos_xor(dest, seed);
-	imshow("chaos_xor", dest);
+	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
 
 	return dest;
 }
@@ -314,9 +315,8 @@ void test5()
 void test6()
 {
 	Mat src = imread("666.png", 0);
-	imshow("src", src);
-	Mat dest= decrypt_icon(src, 'zyc');
-	imshow("dest", dest);
+	src = decrypt_icon(src, 'zyc', 512, 512);
+	imshow("dest", src);
 	waitKey(0);
 
 }
