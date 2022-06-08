@@ -2,6 +2,8 @@
 
 using namespace cv;
 
+int ct = 0;
+#define show(a) imshow(to_string(ct ++ ), a)
 void init()
 {
 	cv::utils::logging::setLogLevel(utils::logging::LOG_LEVEL_SILENT);
@@ -243,7 +245,6 @@ void test4()
 	printf("channels.size() = %d\n", channels.size());
 	for (auto& cur_img : channels)
 	{
-		static int ct = 0;
 		Mat dest;
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
 		dct(cur_img, dest, 0);
@@ -319,6 +320,7 @@ void test4()
 	waitKey(0);
 }
 
+void test8(Mat src);
 void test7(string path)
 {
 	// TODO:以后可以考虑封装一个可变长bitset的类，每次1.5倍增加大小，重载[]符号
@@ -331,71 +333,175 @@ void test7(string path)
 	split(src, channels);
 	for (auto& cur_img : channels)
 	{
-		static int ct = 0;
 		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
-		imshow(to_string(ct++), cur_img);
+		//imshow(to_string(ct++), cur_img);
 
 		int s = 8;
 		// 全图DCT变换，置换高频
-		//for (int i = 0; i < row; i += s)
-		//{
-		//	for (int j = 0; j < col; j += s)
-		//	{
-		//		Mat t_mat(s, s, cur_img.type());
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
 
-		//		for (int x = 0; x < s; x++)
-		//		{
-		//			for (int y = 0; y < s; y++)
-		//			{
-		//				t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-		//			}
-		//		}
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
 
-		//		dct(t_mat, t_mat);
+				dct(t_mat, t_mat);
 
-		//		float a = t_mat.at<float>(s - 1, 0);
-		//		float b = t_mat.at<float>(0, s - 1);
-		//		if (a < b)
-		//		{
-		//			swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
-		//			g_ct++;
-		//		}
-		//		for (int x = 0; x < s; x++)
-		//		{
-		//			for (int y = 0; y < s; y++)
-		//			{
-		//				cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+				float a = t_mat.at<float>(s - 1, 0);
+				float b = t_mat.at<float>(0, s - 1);
+				if (a < b)
+				{
+					swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
+					g_ct++;
+				}
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
 
-		//			}
-		//		}
-		//	}
-		//}
+					}
+				}
+			}
+		}
 
-		//// 全图IDCT变换，重新填入
-		//for (int i = 0; i < row; i += s)
-		//{
-		//	for (int j = 0; j < col; j += s)
-		//	{
-		//		Mat t_mat(s, s, cur_img.type());
+		// 全图IDCT变换，重新填入
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
 
-		//		for (int x = 0; x < s; x++)
-		//		{
-		//			for (int y = 0; y < s; y++)
-		//			{
-		//				t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
-		//			}
-		//		}
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
 
-		//		idct(t_mat, t_mat);
-		//		for (int x = 0; x < s; x++)
-		//		{
-		//			for (int y = 0; y < s; y++)
-		//			{
-		//				cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
-		//			}
-		//		}
-		//	}
-		//}
+				idct(t_mat, t_mat);
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
+	}
+
+
+	Mat dest;
+	merge(channels, dest);
+	//imshow("dest", dest);
+
+	// 防止保存时为全黑
+	test8(dest);
+	//normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
+	dest.convertTo(dest, CV_8UC3, 255. / 255.);
+	test8(dest);
+	imwrite("2.png", dest);
+
+	printf("g_ct = %d\n", g_ct);
+	waitKey(0);
+}
+
+void test8(Mat src)
+{
+	int corr = 0;
+	int wrong = 0;
+	// TODO:以后可以考虑封装一个可变长bitset的类，每次1.5倍增加大小，重载[]符号
+	bitset<100000> res;
+	//Mat src = imread(path);
+	int row = src.rows, col = src.cols;
+
+	vector<Mat> channels;
+	split(src, channels);
+	for (auto& cur_img : channels)
+	{
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+		//imshow(to_string(ct++), cur_img);
+
+		int s = 8;
+		// 全图DCT变换
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				dct(t_mat, t_mat);
+
+				float a = t_mat.at<float>(s - 1, 0);
+				float b = t_mat.at<float>(0, s - 1);
+				/*if (a < b)
+				{
+					swap(t_mat.at<float>(0, s - 1), t_mat.at<float>(s - 1, 0));
+					g_ct++;
+				}*/
+				float eps = 1e-5;
+				if (a > b || fabs(a - b) < eps)
+				{
+					corr++;
+				}
+				else
+				{
+					wrong++;
+					//printf("a = %f b = %f\n", a, b);
+				}
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+
+					}
+				}
+			}
+		}
+
+		// 全图IDCT变换，重新填入
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				idct(t_mat, t_mat);
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
 	}
 
 
@@ -405,9 +511,260 @@ void test7(string path)
 
 	// 防止保存时为全黑
 	normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
-	imwrite("2.png", dest);
+	printf("corr = %d wrong = %d\n", corr, wrong);
 
-	printf("g_ct = %d\n", g_ct);
+	//waitKey(0);
+}
+
+const int bits_size = 1e5 + 10;
+Mat embed_watermark(string path, bitset<bits_size>& bits)
+{
+	Mat src = imread(path);
+	int cur = 0;
+	int row = src.rows, col = src.cols;
+
+	vector<Mat> channels;
+	split(src, channels);
+	for (auto& cur_img : channels)
+	{
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+
+		int s = 8;
+		// 全图DCT变换
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				dct(t_mat, t_mat);
+
+				float a = t_mat.at<float>(s - 1, 0);
+				float b = t_mat.at<float>(0, s - 1);
+				// a>b表示1，a<b表示0
+				if (((a > b) && (bits[cur] == 1)) || ((a < b) && (bits[cur] == 0)))
+				{
+
+				}
+				else
+				{
+					swap(t_mat.at<float>(s - 1, 0), t_mat.at<float>(0, s - 1));
+				}
+
+				cur++;
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
+
+		// 全图IDCT变换，重新填入
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				idct(t_mat, t_mat);
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+					}
+				}
+			}
+		}
+	}
+
+	Mat dest;
+	merge(channels, dest);
+	show(dest);
+
+	// 防止保存时为全黑
+	normalize(dest, dest, 0, 255, NORM_MINMAX, CV_8U);
+
+	return dest;
+}
+
+Mat extract_watermark(string path, int icon_row, int icon_col)
+{
+	Mat src = imread(path);
+	int cur = 0;
+	bitset<bits_size> bits;
+	int row = src.rows, col = src.cols;
+
+	vector<Mat> channels;
+	split(src, channels);
+	for (auto& cur_img : channels)
+	{
+		show(cur_img);
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+
+		int s = 8;
+		// 全图DCT变换，提取
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				dct(t_mat, t_mat);
+
+				float a = t_mat.at<float>(s - 1, 0);
+				float b = t_mat.at<float>(0, s - 1);
+				// a>b表示1，a<b表示0
+				if (a > b)
+				{
+					bits[cur++] = 1;
+				}
+				else
+				{
+					bits[cur++] = 0;
+				}
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+
+					}
+				}
+			}
+		}
+	}
+
+	Mat res(icon_row, icon_col, 0);
+	cur = 0;
+	for (int i = 0; i < icon_row; i++)
+	{
+		for (int j = 0; j < icon_col; j++)
+		{
+			if (bits[cur++] == 1) res.at<uchar>(i, j) = 255;
+			else res.at<uchar>(i, j) = 0;
+		}
+	}
+
+	return res;
+}
+
+
+Mat extract_watermark(Mat src, int icon_row, int icon_col)
+{
+	int cur = 0;
+	bitset<bits_size> bits;
+	int row = src.rows, col = src.cols;
+
+	vector<Mat> channels;
+	split(src, channels);
+	for (auto& cur_img : channels)
+	{
+		cur_img.convertTo(cur_img, CV_32FC1, 1. / 255.);
+
+		
+		int s = 8;
+		// 全图DCT变换，提取
+		for (int i = 0; i < row; i += s)
+		{
+			for (int j = 0; j < col; j += s)
+			{
+				Mat t_mat(s, s, cur_img.type());
+
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						t_mat.at<float>(x, y) = cur_img.at<float>(i + x, j + y);
+					}
+				}
+
+				dct(t_mat, t_mat);
+
+				float a = t_mat.at<float>(s - 1, 0);
+				float b = t_mat.at<float>(0, s - 1);
+				// a>b表示1，a<b表示0
+				if (a > b)
+				{
+					bits[cur++] = 1;
+				}
+				else
+				{
+					bits[cur++] = 0;
+				}
+				for (int x = 0; x < s; x++)
+				{
+					for (int y = 0; y < s; y++)
+					{
+						cur_img.at<float>(i + x, j + y) = t_mat.at<float>(x, y);
+
+					}
+				}
+			}
+		}
+	}
+
+	printf("cur = %d\n", cur);
+	Mat res(icon_row, icon_col, 0);
+	cur = 0;
+	for (int i = 0; i < icon_row; i++)
+	{
+		for (int j = 0; j < icon_col; j++)
+		{
+			if (bits[cur++] == 1) res.at<uchar>(i, j) = 255;
+			else res.at<uchar>(i, j) = 0;
+		}
+	}
+
+	return res;
+}
+
+void test10()
+{
+	Mat icon = get_bin_image("icon.png");
+	show(icon);
+	bitset<bits_size> bits;
+	int pos = 0;
+	for (int i = 0; i < icon.rows; i++)
+	{
+		for (int j = 0; j < icon.cols; j++)
+		{
+			bits[pos++] = icon.at<uchar>(i, j) ? 1 : 0;
+		}
+	}
+
+	Mat embeded = embed_watermark("lena512.png", bits);
+	show(embeded);
+	Mat extracted_icon = extract_watermark(embeded, icon.rows, icon.cols);
+	show(extracted_icon);
+
 	waitKey(0);
 }
 
@@ -421,8 +778,12 @@ int main()
 	//test4();
 	//test5();
 	//test6();
-	test7("lena512.png");
+	//test7("lena512.png");
+	//test8("1.png");
+	//test8("2.png");
+	test10();
 
+	//waitKey(0);
 	return 0;
 }
 
