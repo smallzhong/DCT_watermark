@@ -249,9 +249,14 @@ Mat decrypt_watermark(Mat& src, uint seed, int row = -1, int col = -1, int times
 	return dest;
 }
 
-Mat embed_watermark(string path, bitset<bits_size>& bits)
+Mat embed_watermark(string path, bitset<bits_size>& bits, int img_row = -1, int img_col = -1)
 {
 	Mat src = imread(path);
+	if (~img_row || ~img_col)
+	{
+		resize(src, src, { img_row, img_col });
+	}
+
 	int cur = 0;
 	int row = src.rows, col = src.cols;
 
@@ -530,9 +535,13 @@ Mat extract_watermark(string path, int icon_row, int icon_col, int img_row = -1,
 	return res;
 }
 
-
-Mat extract_watermark(Mat src, int icon_row, int icon_col)
+Mat extract_watermark(Mat src, int icon_row, int icon_col, int img_row = -1, int img_col = -1)
 {
+	if (~img_row || ~img_col)
+	{
+		resize(src, src, { img_row, img_col });
+	}
+
 	int cur = 0;
 	bitset<bits_size> bits;
 	int row = src.rows, col = src.cols;
