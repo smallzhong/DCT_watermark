@@ -213,7 +213,7 @@ bitset<bits_size> get_icon_from_file_and_encrypt(string path, uint seed, int row
 	return bits;
 }
 
-Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times = 17,
+Mat decrypt_watermark(Mat& src, uint seed, int row = -1, int col = -1, int times = 17,
 	int a = 2, int b = -1, int c = -1, int d = 1)
 {
 	Mat dest = src.clone();
@@ -242,7 +242,7 @@ Mat decrypt_icon(Mat& src, uint seed, int row = -1, int col = -1, int times = 17
 void test6()
 {
 	Mat src = imread("666.png", 0);
-	src = decrypt_icon(src, 'zyc', 512, 512);
+	src = decrypt_watermark(src, 'zyc', 512, 512);
 	imshow("dest", src);
 	waitKey(0);
 }
@@ -502,10 +502,10 @@ void test10()
 
 	Mat embeded = embed_watermark("lena512.png", bits);
 	Mat extracted_icon = extract_watermark(embeded, 90, 90);
-	//show(extracted_icon);
-	extracted_icon = decrypt_icon(extracted_icon, 'zyc', 90, 90);
+
+	extracted_icon = decrypt_watermark(extracted_icon, 'zyc', 90, 90);
+
 	show(extracted_icon);
-	//show(embeded);
 
 
 	waitKey(0);
