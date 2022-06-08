@@ -291,9 +291,11 @@ Mat get_icon_from_file_and_encrypt(string path, uint seed, int row, int col,
 Mat decrypt_icon(Mat& src, uint seed, int times =1,
 	int a = 2, int b = -1, int c = -1, int d = 1)
 {
-	Mat dest;
-	dest = Arnold(src, YC_ARNOLD_CUSTOM, times, a, b, c, d);
+	Mat dest = src.clone();
+	dest = Arnold(dest, YC_ARNOLD_CUSTOM, times, a, b, c, d);
+	imshow("arnold", dest);
 	dest = chaos_xor(dest, seed);
+	imshow("chaos_xor", dest);
 
 	return dest;
 }
@@ -302,10 +304,21 @@ void test5()
 {
 	Mat src = get_icon_from_file_and_encrypt("lena512.png", 'zyc', 512, 512);
 	imshow("src", src);
+	imwrite("666.png", src);
 	Mat dest = decrypt_icon(src, 'zyc');
 	imshow("dest", dest);
 
 	waitKey(0);
+}
+
+void test6()
+{
+	Mat src = imread("666.png", 0);
+	imshow("src", src);
+	Mat dest= decrypt_icon(src, 'zyc');
+	imshow("dest", dest);
+	waitKey(0);
+
 }
 
 int main()
@@ -316,7 +329,8 @@ int main()
 	//test2();
 	//test3();
 	//test4();
-	test5();
+	//test5();
+	test6();
 
 	return 0;
 }
