@@ -8,6 +8,12 @@
 #include <vector>
 #include <bitset>
 #include <math.h>
+#include <io.h>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <stdio.h>
+#include <windows.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/utils/logger.hpp>
 
@@ -20,17 +26,17 @@ using namespace std;
 cv::Mat get_bin_image(string path);
 //extern "C" int getopt(int argc, char* const* argv, const char* optstring);
 
-typedef union _LARGE_INTEGER {
-    struct {
-        unsigned int LowPart;
-        int HighPart;
-    } DUMMYSTRUCTNAME;
-    struct {
-        unsigned int LowPart;
-        int HighPart;
-    } u;
-    long long QuadPart;
-} LARGE_INTEGER;
+//typedef union _LARGE_INTEGER {
+//    struct {
+//        unsigned int LowPart;
+//        int HighPart;
+//    } DUMMYSTRUCTNAME;
+//    struct {
+//        unsigned int LowPart;
+//        int HighPart;
+//    } u;
+//    long long QuadPart;
+//} LARGE_INTEGER;
 
 #define EXIT_ERROR(x)                                 \
 	do                                                \

@@ -777,42 +777,90 @@ Mat 提取水印(Mat src, uint seed, int param, int icon_row, int icon_col, int 
 	return extracted_icon;
 }
 
+DWORD EnumerateFileInDirectory(LPSTR szPath)
+{
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hListFile;
+	CHAR szFilePath[MAX_PATH];
+
+	// 构造代表子目录和文件夹路径的字符串，使用通配符"*"
+	lstrcpy(szFilePath, szPath);
+	// 注释的代码可以用于查找所有以“.txt”结尾的文件
+	// lstrcat(szFilePath, "\\*.txt");
+	lstrcat(szFilePath, "\\*");
+
+	// 查找第一个文件/目录，获得查找句柄
+	hListFile = FindFirstFile(szFilePath, &FindFileData);
+	// 判断句柄
+	if (hListFile == INVALID_HANDLE_VALUE)
+	{
+		printf("错误：%d\n", GetLastError());
+		return 1;
+	}
+	else
+	{
+		do
+		{
+			/* 如果不想显示代表本级目录和上级目录的“.”和“..”，
+			可以使用注释部分的代码过滤
+			if(lstrcmp(FindFileData.cFileName, TEXT(".")) == 0 ||
+			lstrcmp(FindFileData.cFileName, TEXT("..")) == 0)
+			{
+				continue;
+			}
+			*/
+
+			// 打印文件名、目录名
+
+			// 判断文件属性，是否为加密文件或者文件夹
+			if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_ENCRYPTED)
+			{
+				continue;
+				//printf("<加密> ");
+			}
+			// 判断文件属性，是否为隐藏文件或文件夹
+			if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
+			{
+				continue;
+				//printf("<隐藏> ");
+			}
+			// 判断文件属性，是否为目录
+			if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				continue;
+				//printf("<DIR> ");
+			}
+
+			printf("%s\n", FindFileData.cFileName);
+			//ttttt(FindFileData.cFileName);
+		} while (FindNextFile(hListFile, &FindFileData));
+	}
+	return 0;
+}
+
+void test_extract_all()
+{
+	CHAR szCurrentPath[MAX_PATH];
+	GetCurrentDirectory(MAX_PATH, szCurrentPath);
+
+	EnumerateFileInDirectory(szCurrentPath);
+}
 
 int main()
 {
 	init();
 
-	Mat src, dest;
+	//Mat src, dest;
 
-	src = imread("lena512.png");
-	src = 嵌入水印(src, "icon.png", 'zyc', 4);
-	src = 嵌入水印(src, "icon.png", 'zyc', 6);
-	src = 嵌入水印(src, "icon.png", 'zyc', 8);
-	src = 嵌入水印(src, "icon.png", 'zyc', 9);
+	//src = imread("lena512.png");
+	//src = 嵌入水印(src, "icon.png", 'zyc');
 
-	dest = 提取水印(src, 'zyc', 4, 90, 90);
-	show(dest);
-	dest = 提取水印(src, 'zyc', 6, 90, 90);
-	show(dest);
-	dest = 提取水印(src, 'zyc', 8, 90, 90);
-	show(dest);
-	dest = 提取水印(src, 'zyc', 9, 90, 90);
-	show(dest);
+	//imwrite("embeded.bmp", src);
+	//dest = 提取水印("embeded.bmp", 'zyc', 9, 90, 90);
+	//show(dest);
 
-	srand(time(NULL));
-	if (rand() % 2)
-	{
-		printf("第一个是src\n");
-		show(src);
-		show(imread("lena512.png"));
-	}
 
-	else
-	{
-		printf("第二个是src\n");
-		show(imread("lena512.png"));
-		show(src);
-	}
+	test_extract_all();
 
 	waitKey(0);
 
