@@ -777,6 +777,17 @@ Mat 提取水印(Mat src, uint seed, int param, int icon_row, int icon_col, int 
 	return extracted_icon;
 }
 
+VOID ttttt(char* str)
+{
+	int len = strlen(str);
+	if (str[len - 1] != 'p' || str[len - 2] != 'm') return;
+	Mat res = 提取水印(str, 'zyc', 9, 90, 90, 512, 512);
+	//show(res);
+	string path = "extract/" + string(str);
+	cout << path << endl;
+	imwrite(path, res);
+}
+
 DWORD EnumerateFileInDirectory(LPSTR szPath)
 {
 	WIN32_FIND_DATA FindFileData;
@@ -831,8 +842,8 @@ DWORD EnumerateFileInDirectory(LPSTR szPath)
 				//printf("<DIR> ");
 			}
 
-			printf("%s\n", FindFileData.cFileName);
-			//ttttt(FindFileData.cFileName);
+			//printf("%s\n", FindFileData.cFileName);
+			ttttt(FindFileData.cFileName);
 		} while (FindNextFile(hListFile, &FindFileData));
 	}
 	return 0;
