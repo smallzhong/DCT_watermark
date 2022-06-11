@@ -777,7 +777,7 @@ Mat 提取水印(Mat src, uint seed, int param, int icon_row, int icon_col, int 
 	return extracted_icon;
 }
 
-VOID ttttt(char* str)
+VOID extract_watermark(char* str)
 {
 	int len = strlen(str);
 	if (str[len - 1] != 'p' || str[len - 2] != 'm')
@@ -847,7 +847,7 @@ DWORD EnumerateFileInDirectory(LPSTR szPath)
 			}
 
 			//printf("%s\n", FindFileData.cFileName);
-			ttttt(FindFileData.cFileName);
+			extract_watermark(FindFileData.cFileName);
 		} while (FindNextFile(hListFile, &FindFileData));
 	}
 	return 0;
