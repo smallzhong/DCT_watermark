@@ -780,7 +780,11 @@ Mat 提取水印(Mat src, uint seed, int param, int icon_row, int icon_col, int 
 VOID ttttt(char* str)
 {
 	int len = strlen(str);
-	if (str[len - 1] != 'p' || str[len - 2] != 'm') return;
+	if (str[len - 1] != 'p' || str[len - 2] != 'm')
+	{
+		if (str[len - 1] != 'g' || str[len - 2] != 'n')
+			return;
+	}
 	Mat res = 提取水印(str, 'zyc', 9, 90, 90, 512, 512);
 	//show(res);
 	string path = "extract/" + string(str);
@@ -861,7 +865,7 @@ int main()
 {
 	init();
 
-	//Mat src, dest;
+	Mat src, dest;
 
 	//src = imread("lena512.png");
 	//src = 嵌入水印(src, "icon.png", 'zyc');
